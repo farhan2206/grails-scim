@@ -7,13 +7,13 @@ interface ScimInterface {
 
     def searchUserByUsernameOrEmail(String username);
 
-    def getUserBySCIMId(Long id);
+    def getUserBySCIMId(String id);
 
     def saveSCIMUser(Map scimUser);
 
-    def updateSCIMUser(Map scimUser,Long id);
+    def updateSCIMUser(Map scimUser,String id);
 
-    void deleteSCIMUser(Long id)
+    void deleteSCIMUser(String id)
 
     def getUsersList(Integer count , Integer startIndex )
 

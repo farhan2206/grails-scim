@@ -15,7 +15,7 @@ buildscript {
     }
 }
 
-version "0.1"
+version "0.1-M1"
 //group "grails.scim"
 
 group "org.grails.plugins"
@@ -120,36 +120,36 @@ grailsPublish {
 //    from sourceSets.main.output
 //}
 
-//publishing {
-//    publications {
-//        mavenJar(MavenPublication) {
-//            pom.withXml {
-//                def pomNode = asNode()
-//                pomNode.dependencyManagement.replaceNode {}
-//
-//                // simply remove dependencies without a version
-//                // version-less dependencies are handled with dependencyManagement
-//                // see https://github.com/spring-gradle-plugins/dependency-management-plugin/issues/8 for more complete solutions
-//                pomNode.dependencies.dependency.findAll {
-//                    it.version.text().isEmpty()
-//                }.each {
-//                    it.replaceNode {}
-//                }
-//            }
+publishing {
+    publications {
+        mavenJar(MavenPublication) {
+            pom.withXml {
+                def pomNode = asNode()
+                pomNode.dependencyManagement.replaceNode {}
+
+                // simply remove dependencies without a version
+                // version-less dependencies are handled with dependencyManagement
+                // see https://github.com/spring-gradle-plugins/dependency-management-plugin/issues/8 for more complete solutions
+                pomNode.dependencies.dependency.findAll {
+                    it.version.text().isEmpty()
+                }.each {
+                    it.replaceNode {}
+                }
+            }
 //            from components.java
 //            artifact sourceJar
-//        }
-//    }
-//    repositories {
-//        maven {
-//            credentials {
-//                username "admin"
-//                password "admin123"
-//            }
-//            url "http://10.100.3.6:8080/nexus/content/repositories/common-component-snapshots/"
-//        }
-//    }
-//}
+        }
+    }
+    repositories {
+        maven {
+            credentials {
+                username "farhanali"
+                password "farhan@12345"
+            }
+            url "http://10.100.3.6:8080/nexus/content/repositories/common-component-snapshots/"
+        }
+    }
+}
 
 //assets {
 //    packagePlugin = true

@@ -5,46 +5,24 @@ import org.grails.datastore.mapping.model.PersistentEntity
 
 class ScimUtil {
 
-    /**
-     * Return the configured Grails Domain Class.
-     *
-     * @param domain the domain instance
+
+    /*
+    *Get Username from filter?userName eq ''
      */
-    static Class<?> getDomainClass(String domainClassName) {
-       // def conf = AuditLoggingConfigUtils.auditConfig
-        String auditLogClassName = domainClassName
-        if (auditLogClassName == null){
-            throw new IllegalArgumentException("grails.plugin.auditLog.auditDomainClassName could not be found in application.groovy. Have you performed 'grails audit-quickstart' after installation?")
-        }
-        def dc = Holders.applicationContext.getBean('grailsDomainClassMappingContext').getPersistentEntity(auditLogClassName)
-        if (!dc) {
-            throw new IllegalArgumentException("The specified user domain class '$auditLogClassName' is not a domain class")
-        }
-        dc.javaClass
+    static String getuserNamefromFilter(String filter){
+        String[] words = filter.split(" ")
+        removeFirstandLast(words[2])
     }
 
-
-    /**
-     * Return Instance of the configured Grails Domain Class.
-     *
-     * @param domain the domain instance
-     */
-    static def getDomainInstance(params) {
-        Class<?> dc = getDomainClass()
-        dc.newInstance(params)
-    }
-
-    /**
-     * Return the grails domain class for the given domain object.
-     *
-     * @param domain the domain instance
-     */
-    static PersistentEntity getPersistentEntity(domain) {
-        if (domain && Holders.grailsApplication.isDomainClass(domain.class)) {
-            Holders.applicationContext.getBean('grailsDomainClassMappingContext').getPersistentEntity(domain.class.name)
-        } else {
-            null
-        }
+    // Function to remove the first and
+    // the last character of a string
+    static String removeFirstandLast(String str)
+    {
+        // Removing first and last character
+        // of a string using substring() method
+        str = str.substring(1, str.length() - 1)
+        // Return the modified string
+        str
     }
 
 

@@ -6,26 +6,25 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 
-//import grails.plugins.scim.dto.ScimResponseDTO
 
 class ScimController {
 
     def scimService
 
-//    static allowedMethods = [Users: ['GET','PUT','DELETE']]
-
-//    def index() { }
+    static allowedMethods = [users: 'GET',createUser:'POST',getUser:'GET',deleteUser:'DELETE',updateUser:'PUT']
 
 //    @GetMapping('/users')
-    def findUser(String userName,Integer count, Integer startIndex) {
-        log.info('Username :' + userName)
+    def users(String filter,Integer count, Integer startIndex) {
+
         try{
+            String userName = ScimUtil.getuserNamefromFilter(filter)
+            log.info('Username :' +userName)
             if (userName) {
                 def responseData = scimService.checkUser(userName)
                 if(responseData?.resources){
                     response.status = 200
                 } else {
-                    response.status = 404
+                    response.status = 200
                 }
                 respond responseData, [formats: ['json']]
             } else {
@@ -41,9 +40,9 @@ class ScimController {
         }
     }
 
-//    @PostMapping('/users')
+    @PostMapping('/users')
     def createUser() {
-        println request.JSON
+        println "Params ---------"+params
         try{
             if(request?.JSON){
                 def data = scimService.createSCIMUser(request?.JSON)
@@ -62,7 +61,7 @@ class ScimController {
     }
 
 //    @GetMapping('/users/$id')
-    def getUser(Long id) {
+    def getUser(String id) {
         try {
             def responseData = scimService.getUser(id)
             if (responseData?.resources) {
@@ -79,7 +78,7 @@ class ScimController {
     }
 
 //    @DeleteMapping('/users/$id')
-    def deleteUser(Long id){
+    def deleteUser(String id){
         try{
             scimService.deleteUserById(id)
             response.status = 204
@@ -91,11 +90,8 @@ class ScimController {
     }
 
 //    @PutMapping('/users/$id')
-    def updateUser(Long id){
+    def updateUser(String id){
         try{
-            log.info('request ------'+request)
-            log.info('Params -------------'+params)
-            println request.JSON
             def data = scimService.createSCIMUser(request.JSON,id)
             response.status = 201
             response.setHeader('Content-Type','application/json')
