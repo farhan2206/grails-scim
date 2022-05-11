@@ -5,7 +5,7 @@ import groovy.transform.CompileStatic
 @CompileStatic
 interface ScimInterface {
 
-    def searchUserByUsernameOrEmail(String username);
+    def searchUserByUsername(String username)
 
     def getUserBySCIMId(String id);
 

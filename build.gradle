@@ -15,8 +15,7 @@ buildscript {
     }
 }
 
-version "0.1-M1"
-//group "grails.scim"
+version "0.1-M2"
 
 group "org.grails.plugins"
 
@@ -62,6 +61,7 @@ dependencies {
 
     console "org.grails:grails-console"
 
+    compile 'org.grails.plugins:spring-security-core:3.1.2'
     compile 'org.grails.plugins:mail:2.0.1'
     compile 'com.github.scribejava:scribejava-core:8.3.1'
     compile 'com.github.scribejava:scribejava-apis:8.3.1'

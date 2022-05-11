@@ -7,8 +7,8 @@ class ScimUtil {
 
 
     /*
-    *Get Username from filter?userName eq ''
-     */
+    *  Get Username from filter?userName eq ''
+    */
     static String getuserNamefromFilter(String filter){
         String[] words = filter.split(" ")
         removeFirstandLast(words[2])

@@ -23,9 +23,8 @@ class ScimService implements GrailsConfigurationAware{
 
 
     ScimResponseDTO checkUser(String username) {
-        println "Check User >>>>>>>>>>>>>>>>>>>"
         ScimResponseDTO scimResponseDTO = new ScimResponseDTO()
-        def user =  scimInterface.searchUserByUsernameOrEmail(username)
+        def user =  scimInterface.searchUserByUsername(username)
         bindUserResponse(user,scimResponseDTO)
 
     }
@@ -69,7 +68,6 @@ class ScimService implements GrailsConfigurationAware{
     }
 
     ScimResponseDTO getUser(String id){
-        println "get user--"
         ScimResponseDTO scimResponseDTO = new ScimResponseDTO()
         def user = scimInterface.getUserBySCIMId(id)
         bindUserResponse(user,scimResponseDTO)
@@ -78,16 +76,18 @@ class ScimService implements GrailsConfigurationAware{
 
 
     Map createSCIMUser(def params, String id = null){
-        println "create scim user"
         Map data = [:]
         Map scimUser = [
                 username : params.userName,
                 fullName : params.name.givenName +" "+params.name.familyName,
                 email : params.emails[0].value,
-                scimId : UUID.randomUUID().toString()
+                scimId : UUID.randomUUID().toString(),
+                active : params.active
         ]
-        log.info("Map SCIM User -----------"+scimUser)
-        def user = null
+        def user =  scimInterface.searchUserByUsername(params.userName)
+        if(user){
+            id = user?.scimId
+        }
         if(id && id != ''){
             println "id::"+id
             user = scimInterface.updateSCIMUser(scimUser,id)
