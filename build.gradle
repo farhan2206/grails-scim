@@ -58,8 +58,9 @@ dependencies {
     provided 'javax.servlet:javax.servlet-api:3.1.0'
 
     testCompile "org.grails:grails-plugin-testing"
-
+    compile "org.grails:grails-core"
     console "org.grails:grails-console"
+    compile "org.grails.plugins:converters:3.3.1"
 
     compile 'org.grails.plugins:spring-security-core:3.1.2'
     compile 'org.grails.plugins:mail:2.0.1'
@@ -96,6 +97,13 @@ grailsPublish {
     title = "My Plugin"
     desc = "Full plugin description"
     developers = [johndoe:"John Doe"]
+}
+grails {
+    pathingJar = true
+    exploded = true
+    plugins {
+//        compile project(':audit-logging')
+    }
 }
 
 //task wrapper(type: Wrapper) {
@@ -151,6 +159,3 @@ publishing {
     }
 }
 
-//assets {
-//    packagePlugin = true
-//}

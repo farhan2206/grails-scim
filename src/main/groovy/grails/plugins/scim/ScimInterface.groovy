@@ -17,4 +17,13 @@ interface ScimInterface {
 
     def getUsersList(Integer count , Integer startIndex )
 
+    def checkGroupExists(String displayName)
+
+    def createSCIMGroup(Map scimGroup)
+
+    def checkGroupExistsById(def p)
+
+    def addScimUserGroupUser(group,user)
+
+    def getAllUserGroups()
 }

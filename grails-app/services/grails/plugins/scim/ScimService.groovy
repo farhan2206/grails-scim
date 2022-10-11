@@ -5,6 +5,9 @@ import grails.converters.JSON
 import grails.core.support.GrailsConfigurationAware
 import grails.plugins.scim.dto.ScimEmailDTO
 import grails.plugins.scim.dto.ScimGroupDTO
+import grails.plugins.scim.dto.ScimGroupMetaDTO
+import grails.plugins.scim.dto.ScimGroupResponseDTO
+import grails.plugins.scim.dto.ScimGroupsResourcesDTO
 import grails.plugins.scim.dto.ScimMetaDTO
 import grails.plugins.scim.dto.ScimNameDTO
 import grails.plugins.scim.dto.ScimPhotoDTO
@@ -25,6 +28,7 @@ class ScimService implements GrailsConfigurationAware{
     ScimResponseDTO checkUser(String username) {
         ScimResponseDTO scimResponseDTO = new ScimResponseDTO()
         def user =  scimInterface.searchUserByUsername(username)
+        println ">>>>>>>>>>>> User >>>>>>>>>>>>>>"+user
         bindUserResponse(user,scimResponseDTO)
 
     }
@@ -35,7 +39,9 @@ class ScimService implements GrailsConfigurationAware{
         ScimMetaDTO scimMetaDTO = new ScimMetaDTO()
         ScimNameDTO scimNameDTO = new ScimNameDTO()
         ArrayList<ScimEmailDTO> emails = []
+        ArrayList<ScimGroupDTO> groups = []
         ScimEmailDTO scimEmailDTO = new ScimEmailDTO()
+
         scimResponseDTO.totalResults = 1
         scimResponseDTO.itemsPerPage = 10
         scimResponseDTO.startIndex = 1
@@ -58,6 +64,17 @@ class ScimService implements GrailsConfigurationAware{
             scimEmailDTO.primary = true
             emails.add(scimEmailDTO)
             scimResourceDTO.emails = emails
+            //def userGroup = scimInterface.getUserGroupsByUser(user)
+            def userGroups = user?.userGroups
+            userGroups.each{
+                ScimGroupDTO scimGroupDTO = new ScimGroupDTO()
+                scimGroupDTO.value = it.id
+                scimGroupDTO.display = it.name
+                groups.add(scimGroupDTO)
+            }
+
+            scimResourceDTO.groups = groups
+
             scimResourceDTOList.add(scimResourceDTO)
             scimResponseDTO.resources = scimResourceDTOList
         } else {
@@ -67,10 +84,60 @@ class ScimService implements GrailsConfigurationAware{
         scimResponseDTO
     }
 
-    ScimResponseDTO getUser(String id){
-        ScimResponseDTO scimResponseDTO = new ScimResponseDTO()
+    def getUser(String id){
         def user = scimInterface.getUserBySCIMId(id)
-        bindUserResponse(user,scimResponseDTO)
+        Map data = [:]
+        if(user) {
+            ScimResourceDTO scimResourceDTO = new ScimResourceDTO()
+            ArrayList<String> schemasResource = []
+            ArrayList<ScimEmailDTO> emails = []
+            ArrayList<ScimPhotoDTO> photos = []
+            ArrayList<ScimGroupDTO> groups = []
+            ScimMetaDTO scimMetaDTO = new ScimMetaDTO()
+            ScimNameDTO scimNameDTO = new ScimNameDTO()
+            scimMetaDTO.created = new Date()
+            scimMetaDTO.location = scimLocation + scimUserUrl+user?.scimId
+            scimResourceDTO.meta = scimMetaDTO
+            scimNameDTO.givenName = user?.fullName.split("\\s")[0] ?:''
+            scimNameDTO.familyName = user?.fullName.split("\\s")[1] ?:''
+            ScimEmailDTO scimEmailDTO = new ScimEmailDTO()
+            scimEmailDTO.value = user?.email
+            scimEmailDTO.primary = true
+            emails.add(scimEmailDTO)
+            def userGroups = user?.userGroups
+            userGroups.each{
+                ScimGroupDTO scimGroupDTO = new ScimGroupDTO()
+                scimGroupDTO.value = it.id
+                scimGroupDTO.display = it.name
+                groups.add(scimGroupDTO)
+            }
+
+            scimResourceDTO.groups = groups
+
+            // Data as List containing Object
+            data = [
+                    schemas : Arrays.asList(scimSchemas.split(",")),
+                    id : user?.scimId,
+                    externalId : user?.id,
+                    meta : scimMetaDTO,
+                    userName : user?.username,
+                    nickName : '',
+                    name : scimNameDTO,
+                    displayname : user?.username,
+                    profileUrl : scimLocation + scimUserUrl+user?.scimId,
+                    title : '',
+                    timezone : DateTimeZone.UTC.ID,
+                    active : true,
+                    photos : photos,
+                    emails : emails,
+                    groups : groups
+
+            ]
+            data
+        } else {
+            data
+        }
+
     }
 
 
@@ -82,17 +149,16 @@ class ScimService implements GrailsConfigurationAware{
                 fullName : params.name.givenName +" "+params.name.familyName,
                 email : params.emails[0].value,
                 scimId : UUID.randomUUID().toString(),
-                active : params.active
+                active : params.active,
+                groups : params.groups
         ]
-        def user =  scimInterface.searchUserByUsername(params.userName)
+        def user = scimInterface.searchUserByUsername(params.userName)
         if(user){
             id = user?.scimId
         }
         if(id && id != ''){
-            println "id::"+id
             user = scimInterface.updateSCIMUser(scimUser,id)
         } else {
-            println "else"
             user = scimInterface.saveSCIMUser(scimUser)
         }
         if(user){
@@ -147,13 +213,13 @@ class ScimService implements GrailsConfigurationAware{
         ArrayList<ScimResourceDTO> scimResourceDTOArrayList = []
         ScimResourceDTO scimResourceDTO = []
         ArrayList<ScimEmailDTO> emails = []
-        scimResponseDTO.totalResults = users.size()
+        scimResponseDTO.totalResults = users?.size()
         scimResponseDTO.itemsPerPage = count?:10
         scimResponseDTO.startIndex = startIndex?:0
         scimResponseDTO.schemas = Arrays.asList(scimSchemas.split(","))
         ScimMetaDTO scimMetaDTO = new ScimMetaDTO()
         ScimNameDTO scimNameDTO = new ScimNameDTO()
-        users.each{
+        users?.each{
             scimResourceDTO.schemas = Arrays.asList(scimSchemas.split(","))
             scimMetaDTO.created = it?.dateCreated
             scimMetaDTO.location = scimLocation + scimUserUrl+it?.scimId
@@ -184,5 +250,85 @@ class ScimService implements GrailsConfigurationAware{
         this.scimLocation = config.getProperty('grails.serverURL')
         this.scimSchemas = config.getProperty('grails.scim.schemas')
         this.scimUserUrl = config.getProperty('grails.scim.user_resource_url')
+    }
+
+    //Create Group
+    def createSCIMGroup(def params) {
+        println params
+        Map data = [:]
+        Boolean result = scimInterface.checkGroupExists(params.displayName)
+        if(!result){
+            Map scimGroup = [
+                    displayName : params.displayName
+                    //scimId : UUID.randomUUID().toString()
+            ]
+            def group = scimInterface.createSCIMGroup(scimGroup)
+            if(group){
+                ScimGroupMetaDTO scimGroupMetaDTO = new ScimGroupMetaDTO()
+                scimGroupMetaDTO.lastCreated = group.dateCreated
+                scimGroupMetaDTO.lastModified = group.lastUpdated
+                scimGroupMetaDTO.resourceType = "Group"
+                // Data as List containing Object
+                data = [
+                        schemas : ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+                        id : group?.id,
+                        externalId : group?.id,
+                        meta : scimGroupMetaDTO,
+                        displayName: group?.name,
+                        members: []
+                ]
+            }
+            data
+        }
+    }
+
+    def performGroupOperations(def id, def params) {
+        Map data = [:]
+        def group = scimInterface.checkGroupExistsById(id)
+        if(group){
+            println params
+            params.members.each{
+                println it.value
+                println "Value s::"+it.value.toString()
+                def user = scimInterface.getUserBySCIMId(it.value as String)
+                   println "User :: "+user
+                if(user){
+                    def userGroupUser = scimInterface.addScimUserGroupUser(group,user)
+                }
+
+            }
+        }
+        data
+    }
+
+    def getSCIMGroups(def p) {
+        Map data = [:]
+        def userGroups = scimInterface.getAllUserGroups()
+        if(userGroups){
+            ArrayList<ScimGroupsResourcesDTO> scimGroupsResourcesDTOArrayList = []
+            userGroups.each {
+                ScimGroupsResourcesDTO scimGroupsResourcesDTO = new ScimGroupsResourcesDTO()
+                def schemas = ["urn:ietf:params:scim:schemas:core:2.0:Group"];
+                scimGroupsResourcesDTO.schemas = schemas
+                scimGroupsResourcesDTO.id = it.id
+                scimGroupsResourcesDTO.externalId = it.id
+                scimGroupsResourcesDTO.displayName = it.name
+                ScimGroupMetaDTO scimGroupMetaDTO = new ScimGroupMetaDTO()
+                scimGroupMetaDTO.lastCreated = it.dateCreated
+                scimGroupMetaDTO.lastModified = it.lastUpdated
+                scimGroupMetaDTO.resourceType = "Group"
+                scimGroupsResourcesDTO.meta = scimGroupMetaDTO
+                scimGroupsResourcesDTOArrayList.add(scimGroupsResourcesDTO)
+            }
+            data = [
+                    "schemas" : ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+                    "totalResults": userGroups.size(),
+                    "Resources":scimGroupsResourcesDTOArrayList,
+                    "startIndex":1,
+                    "itemsPerPage":20
+            ]
+        }
+        data
+
     }
 }
